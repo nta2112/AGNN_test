@@ -75,7 +75,7 @@ class ConvNet4(nn.Module):
        self.layer2 = conv_block(hid_dim, hid_dim*2)
        self.layer3 = conv_block(hid_dim*2, hid_dim*4)
        self.layer4 = conv_block(hid_dim*4, z_dim*4)
-       self.avgpool = nn.AvgPool2d(5, stride=1)
+       self.avgpool = nn.AdaptiveAvgPool2d(1)
        self.fc = nn.Linear(256, 128, bias=True)
        self.fc_bn = nn.BatchNorm1d(128)
        self.out_dim = 128
@@ -86,5 +86,5 @@ class ConvNet4(nn.Module):
        x_sim = self.layer2(x)     
        x = self.layer3(x_sim)
        x_cls = self.layer4(x)
-       x_cls = self.fc_bn(self.fc(self.avgpool(x_cls).squeeze()))
+       x_cls = self.fc_bn(self.fc(self.avgpool(x_cls).view(x_cls.size(0), -1)))
        return x_cls

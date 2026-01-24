@@ -1,0 +1,40 @@
+train_dataset: image-folder-custom
+train_dataset_args:
+    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
+    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    split: train
+    augment: True
+
+tval_dataset: image-folder-custom
+tval_dataset_args:
+    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
+    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    split: test
+    augment: False
+
+val_dataset: image-folder-custom
+val_dataset_args:
+    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
+    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    split: val
+    augment: False
+
+model: gnn
+model_args: 
+    encoder: convnet4
+    encoder_args: {}
+# IMPORTANT: Update this path to point to your trained backbone!
+load_encoder: ./save/classifier_image-folder-custom_convnet4/epoch-last.pth
+
+n_way: 5
+n_shot: 1
+n_query: 15
+train_batches: 20
+test_batches: 20
+ep_per_batch: 1
+
+max_epoch: 200 # Adjusted for smaller dataset/testing first
+optimizer: adam
+optimizer_args: {lr: 0.001, weight_decay: 1.e-5}
+
+visualize_datasets: False

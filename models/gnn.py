@@ -194,7 +194,8 @@ class GNN_nl(nn.Module):
         Wl=self.w_comp_last(x, W_init)
         out = self.layer_last([Wl, x])[1]
 
-        return out[:, 25:50, :] #, w_learn
+        # Removed hardcoding out[:, 25:50, :]
+        return out
 
 @register('gnn')
 class gnn(nn.Module):
@@ -229,6 +230,14 @@ class gnn(nn.Module):
         [a1,a2,a3,a4]=x_shot.size()
         x_node = torch.cat([x_shot.reshape(a1,a2*a3,a4),x_query], dim=1)         
         [b,n,_] = x_query.size()
+        
+        # DEBUG PRINTS to trace shape mismatch
+        # print(f"DEBUG: shot_shape={shot_shape}, query_shape={query_shape}")
+        # print(f"DEBUG: x_shot.size()={x_shot.size()}")
+        
+        # Calculate number of support nodes to slice later
+        num_support = a2 * a3 
+        # print(f"DEBUG: num_support calculated={num_support} (a2={a2}, a3={a3})")
         
         tr_label = tr_label.unsqueeze(1)
         one_hot = torch.zeros((tr_label.size()[0],5),device=x_shot.device)
@@ -269,6 +278,13 @@ class gnn(nn.Module):
 
         out_fea = self.gnn_model(xx) #b*M*d
 
-        logits = out_fea.squeeze(-1) * self.temp
+        # Dynamic slicing: take only the query part
+        # out_fea shape: (Batch, Total_Nodes, Classes)
+        # We need to slice from num_support to end
+        # print(f"DEBUG: out_fea.shape={out_fea.shape}")
+        
+        logits = out_fea[:, num_support:, :] * self.temp
+        
+        # print(f"DEBUG: logits sliced shape={logits.shape}")
 
         return logits
