@@ -24,7 +24,7 @@ model_args:
     encoder: convnet4
     encoder_args: {}
 # IMPORTANT: Update this path to point to your trained backbone!
-load_encoder: ./save/classifier_image-folder-custom_convnet4/epoch-last.pth
+load_encoder: /content/drive/MyDrive/Do_an_Data/checkpoint/epoch-last.pth
 
 n_way: 5
 n_shot: 1

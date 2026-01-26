@@ -184,8 +184,16 @@ def main(config):
             utils.log(f"=> loading checkpoint '{args.resume}'")
             # Load checkpoint
             checkpoint = torch.load(args.resume, map_location='cpu')
-            start_epoch = checkpoint['epoch'] + 1
             
+            # Check for nested 'training' dictionary (how this script saves it)
+            if 'training' in checkpoint:
+                start_epoch = checkpoint['training']['epoch'] + 1
+                optimizer_state = checkpoint['training'].get('optimizer_sd', checkpoint['training'].get('optimizer'))
+            else:
+                # Fallback for potential flat format
+                start_epoch = checkpoint.get('epoch', 0) + 1
+                optimizer_state = checkpoint.get('optimizer_sd', checkpoint.get('optimizer'))
+
             # Load model state
             if config.get('_parallel'):
                 model.module.load_state_dict(checkpoint['model_sd'])
@@ -193,12 +201,10 @@ def main(config):
                 model.load_state_dict(checkpoint['model_sd'])
             
             # Load optimizer state
-            if 'optimizer_sd' in checkpoint:
-                 optimizer.load_state_dict(checkpoint['optimizer_sd'])
-            elif 'optimizer' in checkpoint: # Compatibility
-                 optimizer.load_state_dict(checkpoint['optimizer'])
+            if optimizer_state is not None:
+                optimizer.load_state_dict(optimizer_state)
                  
-            utils.log(f"=> loaded checkpoint '{args.resume}' (epoch {checkpoint['epoch']})")
+            utils.log(f"=> loaded checkpoint '{args.resume}' (epoch {start_epoch - 1})")
         else:
             utils.log(f"=> no checkpoint found at '{args.resume}'")
 
