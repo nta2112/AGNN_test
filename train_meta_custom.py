@@ -34,8 +34,7 @@ def main(config):
     
     if args.save_path:
         save_path = args.save_path
-        if not args.resume and not os.path.exists(save_path):
-            os.makedirs(save_path)
+        os.makedirs(save_path, exist_ok=True)
     else:
         save_path = os.path.join('./save', svname)
         if args.resume is None:
