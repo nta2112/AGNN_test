@@ -122,6 +122,8 @@ def main(config):
         model_sv = torch.load(config['load'])
         model = models.load(model_sv)
     else:
+        # Anti-gravity: inject n_way into model_args to support dynamic GNN size
+        config['model_args']['n_way'] = config['n_way']
         model = models.make(config['model'], **config['model_args'])
 
         if config.get('load_encoder'):

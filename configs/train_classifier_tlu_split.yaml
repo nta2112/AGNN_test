@@ -1,14 +1,14 @@
 train_dataset: image-folder-custom
 train_dataset_args:
-    root_path: data/tlu-states/images
-    split_file: data/split.json
+    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
+    split_file: /content/drive/MyDrive/Do_an_Data/split.json
     split: train
     augment: True
 
 val_dataset: image-folder-custom
 val_dataset_args:
-    root_path: data/tlu-states/images
-    split_file: data/split.json
+    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
+    split_file: /content/drive/MyDrive/Do_an_Data/split.json
     split: val
 
 # Using standard ConvNet4 used in papers for miniImageNet

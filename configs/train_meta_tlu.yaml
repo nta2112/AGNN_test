@@ -4,6 +4,7 @@ train_dataset_args:
     split_file: /content/drive/MyDrive/Do_an_Data/split.json
     split: train
     augment: True
+    image_size: 84
 
 tval_dataset: image-folder-custom
 tval_dataset_args:
@@ -11,6 +12,7 @@ tval_dataset_args:
     split_file: /content/drive/MyDrive/Do_an_Data/split.json
     split: test
     augment: False
+    image_size: 84
 
 val_dataset: image-folder-custom
 val_dataset_args:
@@ -18,13 +20,14 @@ val_dataset_args:
     split_file: /content/drive/MyDrive/Do_an_Data/split.json
     split: val
     augment: False
+    image_size: 84
 
 model: gnn
 model_args: 
     encoder: convnet4
     encoder_args: {}
 # IMPORTANT: Update this path to point to your trained backbone!
-load_encoder: /content/drive/MyDrive/Do_an_Data/checkpoint/epoch-last.pth
+load_encoder: /content/drive/MyDrive/Do_an_Data/Conv4_v01/max-va.pth
 
 n_way: 5
 n_shot: 1

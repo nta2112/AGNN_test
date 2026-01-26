@@ -162,9 +162,9 @@ class Wcompute(nn.Module):
         return W_new
 
 class GNN_nl(nn.Module):
-    def __init__(self, input_features, nf):
+    def __init__(self, input_features, nf, n_way=5):
         super(GNN_nl, self).__init__()
-        self.train_N_way = 5
+        self.train_N_way = n_way
         self.input_features = input_features
         self.nf = nf
         self.num_layers = 3
@@ -200,10 +200,10 @@ class GNN_nl(nn.Module):
 @register('gnn')
 class gnn(nn.Module):
 
-    def __init__(self, encoder, encoder_args={}, alpha=0.9, temp=10, temp_learnable=False):
+    def __init__(self, encoder, encoder_args={}, n_way=5, alpha=0.9, temp=10, temp_learnable=False):
         super().__init__()
         self.encoder = models.make(encoder, **encoder_args)
-        self.gnn_model = GNN_nl(input_features=133, nf=128)    #133,128
+        self.gnn_model = GNN_nl(input_features=128 + n_way, nf=128, n_way=n_way)    #133,128
         self.fusion = nn.Conv2d(2,1, kernel_size=(1,1), stride=(1,1))
         self.alpha = alpha
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
@@ -231,20 +231,19 @@ class gnn(nn.Module):
         x_node = torch.cat([x_shot.reshape(a1,a2*a3,a4),x_query], dim=1)         
         [b,n,_] = x_query.size()
         
-        # DEBUG PRINTS to trace shape mismatch
-        # print(f"DEBUG: shot_shape={shot_shape}, query_shape={query_shape}")
-        # print(f"DEBUG: x_shot.size()={x_shot.size()}")
-        
         # Calculate number of support nodes to slice later
         num_support = a2 * a3 
-        # print(f"DEBUG: num_support calculated={num_support} (a2={a2}, a3={a3})")
         
         tr_label = tr_label.unsqueeze(1)
-        one_hot = torch.zeros((tr_label.size()[0],5),device=x_shot.device)
-        one_hot.scatter_(1,tr_label,1)
-        one_hot_fin = one_hot.reshape(b,tr_label.size()[0]//b,5)     
-        # zero_pad = torch.zeros((b,n,5), device=x_query.device) # zero-init or avg-init
-        zero_pad = torch.zeros((b, n, 5),device= x_query.device).fill_(1.0/5) # zero-init or avg-init
+        
+        # Anti-gravity: Use dynamic N-way from input shape (a2)
+        n_way = a2
+        
+        one_hot = torch.zeros((tr_label.size()[0], n_way), device=x_shot.device)
+        one_hot.scatter_(1, tr_label, 1)
+        one_hot_fin = one_hot.reshape(b, tr_label.size()[0]//b, n_way)     
+        
+        zero_pad = torch.zeros((b, n, n_way), device=x_query.device).fill_(1.0/n_way)
         # zero_pad.requires_grad = True
         #if self.args.cuda:
         #    zero_pad = zero_pad.cuda()
