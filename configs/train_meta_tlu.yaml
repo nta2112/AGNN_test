@@ -24,7 +24,7 @@ val_dataset_args:
 
 model: gnn
 model_args: 
-    encoder: convnet4
+    encoder: resnet12 # tùy chỉnh theo backbone
     encoder_args: {}
 # IMPORTANT: Update this path to point to your trained backbone!
 load_encoder: /content/drive/MyDrive/Do_an_Data/Conv4_v01/max-va.pth
