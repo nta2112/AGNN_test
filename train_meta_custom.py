@@ -23,7 +23,7 @@ def adjust_learning_rate(optimizers, lr, iter):
     for param_group in optimizers.param_groups:
         param_group['lr'] = new_lr
 
-def main(config):
+def main(config, args):
     svname = args.name
     if svname is None:
         svname = 'meta_{}-{}shot'.format(
@@ -158,6 +158,11 @@ def main(config):
             except Exception as e:
                 utils.log(f"Error loading encoder: {e}")
                 raise e
+
+    if args.freeze_encoder:
+        utils.log("Freezing encoder weights.")
+        for param in model.encoder.parameters():
+            param.requires_grad = False
 
     if config.get('_parallel'):
         model = nn.DataParallel(model)
@@ -355,6 +360,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--save-path', default=None, help='custom path to save checkpoints')
     parser.add_argument('--resume', default=None, help='path to checkpoint to resume from')
+    parser.add_argument('--freeze-encoder', action='store_true', help='freeze encoder weights during training')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
@@ -363,4 +369,4 @@ if __name__ == '__main__':
         config['_gpu'] = args.gpu
 
     utils.set_gpu(args.gpu)
-    main(config)
+    main(config, args)
