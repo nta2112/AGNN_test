@@ -27,7 +27,7 @@ model_args:
     encoder: resnet12 # tùy chỉnh theo backbone
     encoder_args: {}
 # IMPORTANT: Update this path to point to your trained backbone!
-load_encoder: /content/drive/MyDrive/Do_an_Data/Conv4_v01/max-va.pth
+load_encoder: /content/drive/MyDrive/Do_an_Data/Checkpoints/classifier_resnet12/max-va.pth
 
 n_way: 5
 n_shot: 1
@@ -38,6 +38,6 @@ ep_per_batch: 1
 
 max_epoch: 200 # Adjusted for smaller dataset/testing first
 optimizer: adam
-optimizer_args: {lr: 0.001, weight_decay: 1.e-5}
+optimizer_args: {lr: 0.0001, weight_decay: 1.e-5}
 
 visualize_datasets: False

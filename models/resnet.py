@@ -71,7 +71,7 @@ class ResNet12(nn.Module):
         # gnn.py: input_features=128 + n_way...
         # So the output of encoder MUST be 128 dimensions if gnn.py expects 128.
         
-        self.out_dim = 512
+        self.out_dim = emb_size
         # However, looking at convnet4, it has an FC layer at the end to project to 'z_dim'. 
         # ConvNet4_128: fc -> z_dim=128.
         # So we MUST project to 128 for compatibility with current GNN config.

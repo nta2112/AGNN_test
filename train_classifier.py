@@ -14,6 +14,7 @@ import datasets
 import models
 import utils
 from datasets.image_folder import ImageFolder
+from datasets import image_folder_custom # Register custom folder
 from models import classifier
 
 def main(config):
@@ -23,8 +24,12 @@ def main(config):
         svname += '_' + config['model_args']['encoder']
     if args.tag is not None:
         svname += '_' + args.tag
-    save_path = os.path.join('./save', svname)
-    utils.ensure_path(save_path)
+    if args.save_path:
+        save_path = args.save_path
+        os.makedirs(save_path, exist_ok=True)
+    else:
+        save_path = os.path.join('./save', svname)
+        utils.ensure_path(save_path)
     utils.set_log_path(save_path)
     writer = SummaryWriter(os.path.join(save_path, 'tensorboard'))
 
@@ -87,7 +92,21 @@ def main(config):
     
     timer_epoch = utils.Timer()
 
-    for epoch in range(1, max_epoch + 1):
+    start_epoch = 1
+    if args.resume:
+        if os.path.isfile(args.resume):
+            utils.log("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            start_epoch = checkpoint['epoch'] + 1
+            model.load_state_dict(checkpoint['model_sd'])
+            if 'optimizer_sd' in checkpoint:
+                optimizer.load_state_dict(checkpoint['optimizer_sd'])
+            utils.log("=> loaded checkpoint '{}' (epoch {})"
+                  .format(args.resume, checkpoint['epoch']))
+        else:
+            utils.log("=> no checkpoint found at '{}'".format(args.resume))
+
+    for epoch in range(start_epoch, max_epoch + 1):
         timer_epoch.s()
         aves_keys = ['tl', 'ta', 'vl', 'va']
         aves = {k: utils.Averager() for k in aves_keys}
@@ -151,6 +170,7 @@ def main(config):
             'model_sd': model.state_dict() if not config.get('_parallel') else model.module.state_dict(),
             'optimizer': config['optimizer'],
             'optimizer_args': config['optimizer_args'],
+            'optimizer_sd': optimizer.state_dict(),
             'epoch': epoch
         }
         torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
@@ -169,6 +189,8 @@ if __name__ == '__main__':
     parser.add_argument('--name', default=None)
     parser.add_argument('--tag', default=None)
     parser.add_argument('--gpu', default='0')
+    parser.add_argument('--save-path', default=None, help='custom path to save checkpoints')
+    parser.add_argument('--resume', default=None, help='path to latest checkpoint (default: None)')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
