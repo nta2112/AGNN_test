@@ -24,9 +24,11 @@ val_dataset_args:
 
 model: gnn
 model_args: 
-    encoder: convnet4 # tùy chỉnh theo backbone
-    encoder_args: {}
-# IMPORTANT: Update this path to point to your trained backbone!
+    encoder: resnet50
+    encoder_args: 
+        pretrained: True
+        image_size: 224
+# scan checkpoint if needed, otherwise rely on torchvision pre-trained
 # load_encoder: /content/drive/MyDrive/Do_an_Data/Backbone/Restnet12V00/max-va.pth
 
 n_way: 5
