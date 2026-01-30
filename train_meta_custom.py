@@ -337,8 +337,9 @@ def main(config, args):
             'model_sd': model_.state_dict(),
             'training': training,
         }
-        torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
-        torch.save(trlog, os.path.join(save_path, 'trlog.pth'))
+        if epoch % args.save_freq == 0:
+            torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
+            torch.save(trlog, os.path.join(save_path, 'trlog.pth'))
 
         if (save_epoch is not None) and epoch % save_epoch == 0:
             torch.save(save_obj,
@@ -361,6 +362,7 @@ if __name__ == '__main__':
     parser.add_argument('--save-path', default=None, help='custom path to save checkpoints')
     parser.add_argument('--resume', default=None, help='path to checkpoint to resume from')
     parser.add_argument('--freeze-encoder', action='store_true', help='freeze encoder weights during training')
+    parser.add_argument('--save-freq', type=int, default=1, help='frequency (in epochs) to save epoch-last.pth and trlog.pth')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
