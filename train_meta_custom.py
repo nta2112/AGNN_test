@@ -338,16 +338,16 @@ def main(config, args):
             'training': training,
         }
         if epoch % args.save_freq == 0:
-            torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
-            torch.save(trlog, os.path.join(save_path, 'trlog.pth'))
+            utils.secure_save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
+            utils.secure_save(trlog, os.path.join(save_path, 'trlog.pth'))
 
         if (save_epoch is not None) and epoch % save_epoch == 0:
-            torch.save(save_obj,
+            utils.secure_save(save_obj,
                     os.path.join(save_path, 'epoch-{}.pth'.format(epoch)))
 
         if aves['va'] > max_va:
             max_va = aves['va']
-            torch.save(save_obj, os.path.join(save_path, 'max-va.pth'))
+            utils.secure_save(save_obj, os.path.join(save_path, 'max-va.pth'))
 
         writer.flush()
 

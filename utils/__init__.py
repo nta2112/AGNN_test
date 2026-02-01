@@ -15,17 +15,49 @@ from torch.optim.lr_scheduler import StepLR
 from . import few_shot
 
 
+import logging
+import os # Ensure os is imported if it was part of the previous block top context, but it fits here.
+
+_logger = None
 _log_path = None
 
 def set_log_path(path):
-    global _log_path
+    global _logger, _log_path
     _log_path = path
+
+    _logger = logging.getLogger('train_logger')
+    _logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers to avoid duplicates
+    if _logger.hasHandlers():
+        _logger.handlers.clear()
+        
+    fh = logging.FileHandler(os.path.join(path, 'log.txt'))
+    fh.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(message)s')
+    fh.setFormatter(formatter)
+    _logger.addHandler(fh)
 
 def log(obj, filename='log.txt'):
     print(obj)
-    if _log_path is not None:
-        with open(os.path.join(_log_path, filename), 'a') as f:
+    if _logger is not None and filename == 'log.txt':
+        _logger.info(obj)
+    elif _log_path is not None:
+         # Fallback for non-standard filenames if legacy behavior needed
+         # Re-implement simple append for different filenames
+         with open(os.path.join(_log_path, filename), 'a') as f:
             print(obj, file=f)
+
+def secure_save(obj, path):
+    """
+    Save torch object with overwrite safety for Google Drive.
+    """
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        print(f"Warning: Could not remove existing file {path}: {e}")
+    torch.save(obj, path)
 
 
 class Averager():
