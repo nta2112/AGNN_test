@@ -51,13 +51,29 @@ def log(obj, filename='log.txt'):
 def secure_save(obj, path):
     """
     Save torch object with overwrite safety for Google Drive.
+    Includes retry logic to handle filesystem latency.
     """
+    # Attempt to remove existing file
     try:
         if os.path.exists(path):
             os.remove(path)
+            time.sleep(1) # Wait for Drive to sync deletion
     except Exception as e:
         print(f"Warning: Could not remove existing file {path}: {e}")
-    torch.save(obj, path)
+
+    # Retry loop for saving
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            torch.save(obj, path)
+            return # Success
+        except RuntimeError as e:
+            if i < max_retries - 1:
+                print(f"Save failed (attempt {i+1}/{max_retries}), retrying in 2s... Error: {e}")
+                time.sleep(2)
+            else:
+                print(f"Save failed after {max_retries} attempts.")
+                raise e
 
 
 class Averager():
