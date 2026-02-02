@@ -105,8 +105,8 @@ class ResNet12(nn.Module):
         
         return x
 
-@register('resnet50')
-class ResNet50(nn.Module):
+@register('resnet50_pretrain')
+class ResNet50Pretrain(nn.Module):
     def __init__(self, emb_size=128, pretrained=True):
         super(ResNet50, self).__init__()
         import torchvision.models as models_tv
