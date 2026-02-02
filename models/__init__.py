@@ -3,5 +3,5 @@ from . import convnet4
 from . import classifier
 from . import gnn
 from . import resnet
-from . import resnet_wrapper
+
 from . import vit
