@@ -104,3 +104,29 @@ class ResNet12(nn.Module):
         x = self.fc(x)
         
         return x
+
+@register('resnet50')
+class ResNet50(nn.Module):
+    def __init__(self, emb_size=128, pretrained=True):
+        super(ResNet50, self).__init__()
+        import torchvision.models as models_tv
+        # Use weights argument for newer torchvision, or pretrained=True for older.
+        # To be safe across versions, we can check or try/except, but usually 'weights' is the way now.
+        # Fallback for older torch in colab?
+        # Let's try 'weights' first, if it fails, user might see error, effectively standard now.
+        # Actually, simpler: define generic load.
+        try:
+            from torchvision.models import ResNet50_Weights
+            weights = ResNet50_Weights.DEFAULT if pretrained else None
+            self.model = models_tv.resnet50(weights=weights)
+        except ImportError:
+            self.model = models_tv.resnet50(pretrained=pretrained)
+
+        # Replace the final fully connected layer
+        # ResNet50 fc input features is 2048
+        num_ftrs = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_ftrs, emb_size)
+        self.out_dim = emb_size
+
+    def forward(self, x):
+        return self.model(x)

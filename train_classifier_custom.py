@@ -232,9 +232,13 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default='0')
     parser.add_argument('--resume', default=None, help='path to checkpoint to resume from')
     parser.add_argument('--save-path', default=None, help='custom path to save checkpoints and logs')
+    parser.add_argument('--save-epoch', type=int, default=None, help='frequency of saving checkpoints (in epochs)')
     args = parser.parse_args()
 
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
+    if args.save_epoch is not None:
+        config['save_epoch'] = args.save_epoch
+
     if len(args.gpu.split(',')) > 1:
         config['_parallel'] = True
         config['_gpu'] = args.gpu
