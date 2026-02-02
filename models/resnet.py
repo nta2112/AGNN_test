@@ -108,7 +108,7 @@ class ResNet12(nn.Module):
 @register('resnet50_pretrain')
 class ResNet50Pretrain(nn.Module):
     def __init__(self, emb_size=128, pretrained=True):
-        super(ResNet50, self).__init__()
+        super(ResNet50Pretrain, self).__init__()
         import torchvision.models as models_tv
         # Use weights argument for newer torchvision, or pretrained=True for older.
         # To be safe across versions, we can check or try/except, but usually 'weights' is the way now.
