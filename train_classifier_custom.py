@@ -210,7 +210,7 @@ def main(config):
             'model': config['model'],
             'model_args': config['model_args'],
             'model_sd': model.state_dict() if not config.get('_parallel') else model.module.state_dict(),
-            'optimizer': config['optimizer'],
+            'optimizer': optimizer.state_dict(),
             'optimizer_args': config['optimizer_args'],
             'epoch': epoch
         }
