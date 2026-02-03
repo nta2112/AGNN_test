@@ -125,8 +125,13 @@ def main(config):
         if os.path.isfile(args.resume):
             utils.log(f"=> loading checkpoint '{args.resume}'")
             checkpoint = torch.load(args.resume, map_location='cpu') # Map to CPU first to avoid GPU mapping issues if different
-            start_epoch = checkpoint['epoch'] + 1
-            
+            if 'training' in checkpoint:
+                start_epoch = checkpoint['training']['epoch'] + 1
+                optimizer_state = checkpoint['training'].get('optimizer_sd', checkpoint['training'].get('optimizer'))
+            else:
+                start_epoch = checkpoint.get('epoch', 0) + 1
+                optimizer_state = checkpoint.get('optimizer')
+
             # Load model state
             # Check if model is DataParallel but checkpoint is not (handled by save logic usually, but let's be safe)
             if config.get('_parallel'):
@@ -135,7 +140,8 @@ def main(config):
                 model.load_state_dict(checkpoint['model_sd'])
                 
             # Load optimizer state
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            if optimizer_state is not None:
+                optimizer.load_state_dict(optimizer_state)
             
             # Load scheduler if exists and if saved (Standard code didn't save scheduler state explicitly in 'optimizer' key, 
              # usually it's separate. The save_obj in line 152 doesn't seem to save scheduler state explicitly 
@@ -204,15 +210,19 @@ def main(config):
         writer.add_scalars('acc', {'train': aves['ta'].item(), 'val': aves['va'].item()}, epoch)
 
         # Save
+        training = {
+            'epoch': epoch,
+            'optimizer': config['optimizer'],
+            'optimizer_args': config['optimizer_args'],
+            'optimizer_sd': optimizer.state_dict(),
+        }
         save_obj = {
             'file': __file__,
             'config': config,
             'model': config['model'],
             'model_args': config['model_args'],
             'model_sd': model.state_dict() if not config.get('_parallel') else model.module.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'optimizer_args': config['optimizer_args'],
-            'epoch': epoch
+            'training': training,
         }
         torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
 
