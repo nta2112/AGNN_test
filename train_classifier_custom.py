@@ -129,11 +129,24 @@ def main(config):
                 optimizer_state = checkpoint.get('optimizer')
 
             # Load model state
+            # Load model state
+            model_sd = checkpoint['model_sd']
+            
+            # Anti-gravity: Fix for legacy ResNet50 checkpoints (fc -> projection)
+            # The new ResNet50 implementation uses 'projection' instead of 'model.fc'
+            keys_to_fix = [k for k in model_sd.keys() if 'encoder.model.fc' in k]
+            if len(keys_to_fix) > 0:
+                utils.log(f"Detected legacy ResNet50 checkpoint. Remapping {len(keys_to_fix)} keys from 'fc' to 'projection'.")
+                for k in keys_to_fix:
+                    # encoder.model.fc.weight -> encoder.projection.weight
+                    new_key = k.replace('encoder.model.fc', 'encoder.projection')
+                    model_sd[new_key] = model_sd.pop(k)
+
             # Check if model is DataParallel but checkpoint is not (handled by save logic usually, but let's be safe)
             if config.get('_parallel'):
-                model.module.load_state_dict(checkpoint['model_sd'])
+                model.module.load_state_dict(model_sd)
             else:
-                model.load_state_dict(checkpoint['model_sd'])
+                model.load_state_dict(model_sd)
                 
             # Load optimizer state
             if optimizer_state is not None:
