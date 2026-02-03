@@ -12,6 +12,8 @@ def register(name):
 def make(name, **kwargs):
     if name is None:
         return None
+    if name not in models:
+        raise KeyError(f"Model '{name}' not found. Available models: {list(models.keys())}")
     model = models[name](**kwargs)
     if torch.cuda.is_available():
         model.cuda()

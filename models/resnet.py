@@ -105,28 +105,39 @@ class ResNet12(nn.Module):
         
         return x
 
+@register('resnet50')
 @register('resnet50_pretrain')
 class ResNet50Pretrain(nn.Module):
-    def __init__(self, emb_size=128, pretrained=True):
+    def __init__(self, emb_size=128, pretrained=True, **kwargs):
         super(ResNet50Pretrain, self).__init__()
         import torchvision.models as models_tv
         # Use weights argument for newer torchvision, or pretrained=True for older.
-        # To be safe across versions, we can check or try/except, but usually 'weights' is the way now.
-        # Fallback for older torch in colab?
-        # Let's try 'weights' first, if it fails, user might see error, effectively standard now.
-        # Actually, simpler: define generic load.
         try:
             from torchvision.models import ResNet50_Weights
             weights = ResNet50_Weights.DEFAULT if pretrained else None
             self.model = models_tv.resnet50(weights=weights)
         except ImportError:
             self.model = models_tv.resnet50(pretrained=pretrained)
+        except Exception as e:
+            # Fallback for any other unexpected error (e.g. connection issue even with weights=None?)
+            # Usually weights=None is safe. If downloading fails for pretrained=True, this catch helps?
+            if pretrained:
+                print(f"Warning: Failed to load pretrained weights: {e}. Loading random weights.")
+                self.model = models_tv.resnet50(pretrained=False)
+            else:
+                raise e
 
         # Replace the final fully connected layer
         # ResNet50 fc input features is 2048
         num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, emb_size)
+        # Use Identity to remove the FC layer effect inside the model
+        self.model.fc = nn.Identity()
+        # Add projection layer
+        self.projection = nn.Linear(num_ftrs, emb_size)
         self.out_dim = emb_size
 
     def forward(self, x):
-        return self.model(x)
+        # Extract features from resnet
+        x = self.model(x)
+        # Apply projection
+        return self.projection(x)
