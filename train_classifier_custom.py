@@ -29,12 +29,8 @@ def main(config):
     if args.save_path:
         save_path = args.save_path
         # If using custom path, likely on Drive, do NOT remove it blindly
-        if not args.resume:
-             # Only ensure if not resuming. If resuming, it must exist.
-             # And even if not resuming, we shouldn't wipe Drive folders via input() usually,
-             # but let's at least disable 'remove' behavior if custom path is used.
-             if not os.path.exists(save_path):
-                 os.makedirs(save_path)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path, exist_ok=True)
     else:
         save_path = os.path.join('./save', svname)
         # Only use ensure_path (which prompts delete) if NOT resuming
