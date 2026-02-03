@@ -159,7 +159,7 @@ def main(config):
              # Resume logic without scheduler state is acceptable for SGD with StepLR usually if we just recalculated,
              # but let's just do model/optimizer for now as that's the massive part).
             
-            utils.log(f"=> loaded checkpoint '{args.resume}' (epoch {checkpoint['epoch']})")
+            utils.log(f"=> loaded checkpoint '{args.resume}' (epoch {start_epoch - 1})")
         else:
             utils.log(f"=> no checkpoint found at '{args.resume}'")
 
