@@ -40,7 +40,27 @@ class ImageFolderCrop(Dataset):
         print(f"Scanning for images in: {images_dir}")
         print(f"Scanning for annotations in: {annotations_dir}")
 
-        classes = sorted(os.listdir(images_dir))
+        if kwargs.get('split'):
+            path = kwargs.get('split_file')
+            if path is None:
+                path = os.path.join(
+                        os.path.dirname(root_path.rstrip('/')), 'split.json')
+            if os.path.exists(path):
+                import json
+                split = json.load(open(path, 'r'))
+                split_name = kwargs['split']
+                if split_name in split:
+                    classes = sorted(split[split_name])
+                    print(f"Loading '{split_name}' split with {len(classes)} classes.")
+                else:
+                     print(f"Warning: Split '{split_name}' not found in {path}. Using all folders.")
+                     classes = sorted(os.listdir(images_dir))
+            else:
+                print(f"Warning: Split file {path} not found. Using all folders.")
+                classes = sorted(os.listdir(images_dir))
+        else:
+            classes = sorted(os.listdir(images_dir))
+
         classes = [c for c in classes if os.path.isdir(os.path.join(images_dir, c))]
         
         # Build samples
