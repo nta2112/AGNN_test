@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
+import time
 
 import datasets
 import models
@@ -225,7 +226,18 @@ def main(config, args):
         writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
 
         np.random.seed(epoch)
-        for data, _ in tqdm(train_loader, desc='train', leave=False):
+        
+        # profiling timers
+        t_data_accum = 0.0
+        t_fwd_accum = 0.0
+        t_bwd_accum = 0.0
+        t_start = time.time()
+        
+        for i, (data, _) in enumerate(tqdm(train_loader, desc='train', leave=False)):
+            t_data = time.time() - t_start
+            t_data_accum += t_data
+            
+            t_model_start = time.time()
             x_shot, x_query = fs.split_shot_query(
                     data.cuda(), n_train_way, n_train_shot, n_query,
                     ep_per_batch=ep_per_batch)
@@ -242,15 +254,30 @@ def main(config, args):
             logits = logits.view(-1, n_train_way)
             loss = F.cross_entropy(logits, label)
             acc = utils.compute_acc(logits, label)
+            
+            t_fwd = time.time() - t_model_start
+            t_fwd_accum += t_fwd
 
+            t_bwd_start = time.time()
             total_loss = loss
             total_loss.backward()
             optimizer.step()
+            t_bwd = time.time() - t_bwd_start
+            t_bwd_accum += t_bwd
             
             aves['tl'].add(total_loss.sum().item())
             aves['ta'].add(acc)
 
             logits = None; total_loss = None ;loss = None
+            
+            # Print profiling stats every 10 batches
+            if (i + 1) % 10 == 0:
+                utils.log(f" [Profile] Batch {i+1}: DataLoad={t_data_accum/10:.3f}s | Fwd={t_fwd_accum/10:.3f}s | Bwd={t_bwd_accum/10:.3f}s")
+                t_data_accum = 0.0
+                t_fwd_accum = 0.0
+                t_bwd_accum = 0.0
+            
+            t_start = time.time()
             
         # eval
         model.eval()
