@@ -79,8 +79,21 @@ class ImageFolderCrop(Dataset):
                                     self.label.append(i)
                                     has_object = True
                             
+                            if not has_object:
+                                # Fallback: XML exists but no object? Use whole image?
+                                # Ideally we should check image size, but for now let's rely on PIL lazy loading later
+                                # We mark special crop -1 to indicate full image
+                                print(f"Warning: {xml_path} has no objects. Using full image.")
+                                self.samples.append((image_path, -1, -1, -1, -1, i))
+                                self.label.append(i)
+
                         except Exception as e:
                             print(f"Error parsing {xml_path}: {e}")
+                    else: 
+                        # Fallback: No XML found. Use whole image.
+                        # print(f"Info: No XML for {filename}. Using full image.")
+                        self.samples.append((image_path, -1, -1, -1, -1, i))
+                        self.label.append(i)
                     # else: skip images without XML
         
         # Undersampling (Class Balancing)
@@ -183,8 +196,12 @@ class ImageFolderCrop(Dataset):
             img = Image.open(image_path).convert('RGB')
             
             # Crop the object
-            # Validation of coordinates could be added here
-            crop = img.crop((xmin, ymin, xmax, ymax))
+            if xmin == -1:
+                # Full image fallback
+                crop = img
+                # Optional: maybe check if image is too large?
+            else:
+                crop = img.crop((xmin, ymin, xmax, ymax))
             
             return self.transform(crop), label
             
