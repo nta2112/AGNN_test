@@ -83,6 +83,8 @@ class ImageFolderCrop(Dataset):
                             print(f"Error parsing {xml_path}: {e}")
                     # else: skip images without XML
         
+        # Undersampling (Class Balancing)
+        max_samples_per_class = kwargs.get('max_samples_per_class')
         if max_samples_per_class is not None:
             # ... (balancing logic remains same, just need to be careful with remapping)
             # Actually, let's remap labels FIRST, then balance, or balance then remap.
