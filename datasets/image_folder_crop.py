@@ -85,6 +85,34 @@ class ImageFolderCrop(Dataset):
         
         self.n_classes = max(self.label) + 1 if self.label else 0
         print(f"Found {len(self.samples)} cropped objects across {self.n_classes} classes.")
+        
+        # Undersampling (Class Balancing)
+        max_samples_per_class = kwargs.get('max_samples_per_class')
+        if max_samples_per_class is not None:
+            print(f"Applying class balancing: max {max_samples_per_class} samples per class.")
+            import random
+            balanced_samples = []
+            balanced_labels = []
+            
+            # Group samples by class
+            class_samples = {}
+            for s in self.samples:
+                label = s[-1]
+                if label not in class_samples:
+                    class_samples[label] = []
+                class_samples[label].append(s)
+            
+            for label, samples in class_samples.items():
+                if len(samples) > max_samples_per_class:
+                    selected = random.sample(samples, max_samples_per_class)
+                else:
+                    selected = samples
+                balanced_samples.extend(selected)
+                balanced_labels.extend([label] * len(selected))
+            
+            self.samples = balanced_samples
+            self.label = balanced_labels
+            print(f"After balancing: {len(self.samples)} samples across {self.n_classes} classes.")
 
         # Transforms
         norm_params = {'mean': [0.485, 0.456, 0.406],
