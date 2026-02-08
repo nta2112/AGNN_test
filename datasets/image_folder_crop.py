@@ -83,10 +83,46 @@ class ImageFolderCrop(Dataset):
                             print(f"Error parsing {xml_path}: {e}")
                     # else: skip images without XML
         
-        self.n_classes = max(self.label) + 1 if self.label else 0
-        print(f"Found {len(self.samples)} cropped objects across {self.n_classes} classes.")
+        if max_samples_per_class is not None:
+            # ... (balancing logic remains same, just need to be careful with remapping)
+            # Actually, let's remap labels FIRST, then balance, or balance then remap.
+            # Best is:
+            # 1. Load all valid samples as (path, box..., class_name_index)
+            # 2. Filter out classes with 0 samples
+            # 3. Create a mapping old_index -> new_contiguous_index
+            # 4. Update samples with new index
+            pass
+
+        # RE-IMPLEMENTATION OF LABEL MAPPING TO FIX "EMPTY CLASS" BUG
+        # The previous loop used `i` from `enumerate(classes)` as label.
+        # If a class had no samples (e.g. no XML), that `i` would never appear in `self.label`.
+        # But `n_classes = max(label) + 1` would include it, creating a gap.
+        # CategoriesSampler iterates `range(n_classes)`, hitting the gap -> Empty list -> Error.
+
+        # 1. Extract unique labels present in the data
+        present_labels = sorted(list(set(s[-1] for s in self.samples)))
         
-        # Undersampling (Class Balancing)
+        # 2. Create mapping: old_label -> new_contiguous_label
+        label_map = {old_l: new_l for new_l, old_l in enumerate(present_labels)}
+        
+        # 3. Update samples with new labels
+        new_samples = []
+        new_labels = []
+        for s in self.samples:
+            # s is tuple, immutable. construct new one
+            # s = (path, xmin, ymin, xmax, ymax, old_label)
+            old_label = s[-1]
+            new_label = label_map[old_label]
+            new_samples.append(s[:-1] + (new_label,))
+            new_labels.append(new_label)
+            
+        self.samples = new_samples
+        self.label = new_labels
+        
+        self.n_classes = len(present_labels)
+        print(f"DEBUG: Remapped {len(present_labels)} non-empty classes to contiguous labels 0-{self.n_classes-1}.")
+
+        # Undersampling (Class Balancing) - Moved after remapping for safety
         max_samples_per_class = kwargs.get('max_samples_per_class')
         if max_samples_per_class is not None:
             print(f"Applying class balancing: max {max_samples_per_class} samples per class.")
