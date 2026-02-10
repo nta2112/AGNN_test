@@ -31,7 +31,23 @@ def preprocess(args):
     classes = sorted(os.listdir(images_dir))
     classes = [c for c in classes if os.path.isdir(os.path.join(images_dir, c))]
     
-    print(f"Found {len(classes)} classes in {images_dir}.")
+    # Optional: Filter by split file if provided
+    if args.split_file and args.split_name:
+        import json
+        try:
+            with open(args.split_file, 'r') as f:
+                split_data = json.load(f)
+                if args.split_name in split_data:
+                    target_classes = set(split_data[args.split_name])
+                    classes = [c for c in classes if c in target_classes]
+                    print(f"Filtered to {len(classes)} classes from split '{args.split_name}' in {args.split_file}")
+                else:
+                    print(f"Warning: Split name '{args.split_name}' not found in {args.split_file}. Using all classes.")
+        except Exception as e:
+            print(f"Error reading split file: {e}")
+            return
+
+    print(f"Found {len(classes)} classes in {images_dir} to process.")
     
     count_crop = 0
     count_full = 0
@@ -115,5 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, required=True, help='Input root path containing images/ and annotations/')
     parser.add_argument('--output', type=str, required=True, help='Output root path')
     parser.add_argument('--size', type=int, default=256, help='Target size for resize (default: 256)')
+    parser.add_argument('--split-file', type=str, default=None, help='Path to split.json (optional)')
+    parser.add_argument('--split-name', type=str, default='train', help='Key in split.json to filter (default: train)')
     args = parser.parse_args()
     preprocess(args)
