@@ -25,8 +25,8 @@ def preprocess(args):
         print(f"Error: {images_dir} does not exist. Please provide root path containing 'images' and 'annotations'.")
         return
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(output_root):
+        os.makedirs(output_root)
         
     classes = sorted(os.listdir(images_dir))
     classes = [c for c in classes if os.path.isdir(os.path.join(images_dir, c))]
@@ -58,7 +58,7 @@ def preprocess(args):
         # Handle missing annotation folder gracefully
         class_xml_dir = os.path.join(annotations_dir, class_name)
         
-        class_out_dir = os.path.join(output_dir, class_name)
+        class_out_dir = os.path.join(output_root, class_name)
         if not os.path.exists(class_out_dir):
             os.makedirs(class_out_dir)
             
