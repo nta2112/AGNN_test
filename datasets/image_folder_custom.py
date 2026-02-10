@@ -41,13 +41,19 @@ class ImageFolderCustom(Dataset):
 
         # Filter classes to ensure they are directories
         classes = [c for c in classes if os.path.isdir(os.path.join(root_path, c))]
+        print(f"DEBUG: ImageFolderCustom root={root_path}, split={kwargs.get('split')}, found {len(classes)} classes: {classes[:5]}...")
 
         for i, c in enumerate(classes):
             class_path = os.path.join(root_path, c)
-            for filename in sorted(os.listdir(class_path)):
+            files = sorted(os.listdir(class_path))
+            for filename in files:
                 if is_image_file(filename):
                     self.filepaths.append(os.path.join(class_path, filename))
                     self.label.append(i)
+        
+        print(f"DEBUG: Loaded {len(self.filepaths)} images across {len(classes)} classes.")
+        if len(self.filepaths) == 0:
+             print(f"ERROR: No images found! Check root_path and split file.")
         
         self.n_classes = max(self.label) + 1 if self.label else 0
 
