@@ -200,7 +200,7 @@ class GNN_nl(nn.Module):
 @register('gnn')
 class gnn(nn.Module):
 
-    def __init__(self, encoder, encoder_args={}, n_way=5, alpha=0.9, temp=10, temp_learnable=False):
+    def __init__(self, encoder, encoder_args={}, n_way=5, alpha=0.9, temp=10, temp_learnable=False, ablation_no_graph=False):
         super().__init__()
         self.encoder = models.make(encoder, **encoder_args)
         self.gnn_model = GNN_nl(input_features=128 + n_way, nf=128, n_way=n_way)    #133,128
@@ -211,6 +211,10 @@ class gnn(nn.Module):
             self.temp = nn.Parameter(torch.tensor(temp))
         else:
             self.temp = temp
+        
+        self.ablation_no_graph = ablation_no_graph
+        if self.ablation_no_graph:
+            print("WARNING: AGNN is running in ABLATION MODE (No Graph). GNN modules will be skipped.")
 
     def forward(self, x_shot, x_query, tr_label):
         shot_shape = x_shot.shape[:-3]
@@ -226,6 +230,26 @@ class gnn(nn.Module):
         x_shot, x_query = x_tot[:len(x_shot)], x_tot[-len(x_query):]
         x_shot = x_shot.view(*shot_shape, -1)
         x_query = x_query.view(*query_shape, -1)
+
+        # --- ABLATION: NO GRAPH ---
+        if self.ablation_no_graph:
+            # Implement Prototypical Network logic here as the "No Graph" baseline
+            # Prototypes = Mean of support features per class
+            prototypes = x_shot.mean(dim=2) # (B, n_way, D)
+            
+            num_query = x_query.size(1)
+            num_proto = prototypes.size(1)
+            
+            # Expand for broadcasting and distance calculation
+            query_exp = x_query.unsqueeze(2).expand(-1, -1, num_proto, -1) # (B, N_Q, N_Way, D)
+            proto_exp = prototypes.unsqueeze(1).expand(-1, num_query, -1, -1) # (B, N_Q, N_Way, D)
+            
+            # Squared Euclidean Distance
+            # logits = -|x - p|^2
+            logits = -torch.pow(query_exp - proto_exp, 2).sum(3) * self.temp # (B, N_Q, N_Way)
+            
+            return logits
+        # --------------------------
 
         [a1,a2,a3,a4]=x_shot.size()
         x_node = torch.cat([x_shot.reshape(a1,a2*a3,a4),x_query], dim=1)         

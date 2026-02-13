@@ -1,0 +1,51 @@
+
+# Config for AGNN with Graph Component Disabled (Ablation Study)
+# This keeps the AGNN model class but activates the internal bypass for the graph.
+
+train_dataset: image-folder-custom
+train_dataset_args:
+    root_path: /content/data/tlu-states-train-cropped-13
+    split_file: /content/data/split.json
+    split: train
+    augment: True
+    image_size: 224
+    max_samples_per_class: 200
+
+tval_dataset: image-folder-custom
+tval_dataset_args:
+    root_path: /content/data/tlu-states-val-cropped
+    split_file: /content/data/split.json
+    # split: test
+    augment: False
+    image_size: 224
+
+val_dataset: image-folder-custom
+val_dataset_args:
+    root_path: /content/data/tlu-states-test-cropped
+    split_file: /content/data/split.json
+    # split: val
+    augment: False
+    image_size: 224
+
+model: gnn
+model_args: 
+    encoder: resnet50
+    encoder_args: 
+        pretrained: True
+        image_size: 224
+    ablation_no_graph: True  # <--- CRITICAL: This disables the graph component
+# scan checkpoint if needed, otherwise rely on torchvision pre-trained
+load_encoder: /content/drive/MyDrive/Do_an_Data/Backbone/Restnet50/max-va.pth
+
+n_way: 5
+n_shot: 1
+n_query: 15
+train_batches: 100
+test_batches: 5
+ep_per_batch: 1
+
+max_epoch: 20 
+optimizer: adam
+optimizer_args: {lr: 0.0001, weight_decay: 1.e-5}
+
+visualize_datasets: False

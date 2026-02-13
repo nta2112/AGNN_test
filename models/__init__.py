@@ -5,3 +5,4 @@ from . import gnn
 from . import resnet
 
 from . import vit
+from . import protonet

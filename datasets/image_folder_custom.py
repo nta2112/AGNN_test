@@ -40,30 +40,14 @@ class ImageFolderCustom(Dataset):
              classes = sorted(os.listdir(root_path))
 
         # Filter classes to ensure they are directories
-        classes_in_root = os.listdir(root_path) if os.path.exists(root_path) else []
         classes = [c for c in classes if os.path.isdir(os.path.join(root_path, c))]
-        
-        print(f"DEBUG: ImageFolderCustom root='{root_path}'")
-        print(f"DEBUG: Found {len(classes)} matching classes from split='{kwargs.get('split')}'.")
-        
-        if len(classes) == 0:
-             print(f"DEBUG: Root path exists? {os.path.exists(root_path)}")
-             if os.path.exists(root_path):
-                 print(f"DEBUG: Contents of root: {classes_in_root[:10]}...")
-                 if kwargs.get('split'):
-                     print(f"DEBUG: Expected classes from split: {json.load(open(kwargs.get('split_file'), 'r'))[kwargs['split']][:5]}...")
 
         for i, c in enumerate(classes):
             class_path = os.path.join(root_path, c)
-            files = sorted(os.listdir(class_path))
-            for filename in files:
+            for filename in sorted(os.listdir(class_path)):
                 if is_image_file(filename):
                     self.filepaths.append(os.path.join(class_path, filename))
                     self.label.append(i)
-        
-        print(f"DEBUG: Loaded {len(self.filepaths)} images across {len(classes)} classes.")
-        if len(self.filepaths) == 0:
-             print(f"ERROR: No images found! Check root_path and split file.")
         
         self.n_classes = max(self.label) + 1 if self.label else 0
 
