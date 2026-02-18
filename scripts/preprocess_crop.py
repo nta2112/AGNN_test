@@ -80,7 +80,15 @@ def preprocess(args):
         try:
             with open(args.split_file, 'r') as f:
                 split_data = json.load(f)
-                if args.split_name in split_data:
+                
+                if args.split_name == 'all':
+                   target_classes = set()
+                   for split_key in split_data:
+                       target_classes.update(split_data[split_key])
+                   classes = [c for c in classes if c in target_classes]
+                   print(f"Filtered to {len(classes)} classes from ALL splits in {args.split_file}")
+                
+                elif args.split_name in split_data:
                     target_classes = set(split_data[args.split_name])
                     classes = [c for c in classes if c in target_classes]
                     print(f"Filtered to {len(classes)} classes from split '{args.split_name}' in {args.split_file}")
