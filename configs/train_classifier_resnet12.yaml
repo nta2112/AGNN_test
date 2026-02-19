@@ -1,0 +1,31 @@
+train_dataset: image-folder-custom
+train_dataset_args:
+    root_path: /content/data
+    split_file: /content/data/split.json
+    split: train
+    augment: True
+    image_size: 224
+
+val_dataset: image-folder-custom
+val_dataset_args:
+    root_path: /content/data
+    split_file: /content/data/split.json
+    split: val
+    image_size: 224
+
+model: classifier
+model_args:
+    encoder: resnet12
+    encoder_args: 
+        emb_size: 128
+        drop_rate: 0.1 # Optional: add dropout if needed
+    classifier: linear-classifier
+    classifier_args: {n_classes: 13}
+
+batch_size: 64
+max_epoch: 100
+optimizer: sgd
+optimizer_args: {lr: 0.05, weight_decay: 5.e-4, milestones: [60, 80]}
+
+save_epoch: 10
+visualize_datasets: False
