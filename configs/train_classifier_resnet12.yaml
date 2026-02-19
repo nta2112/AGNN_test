@@ -4,25 +4,26 @@ train_dataset_args:
     split_file: /content/data/split.json
     split: train
     augment: True
-    image_size: 224
+    image_size: 84
 
 val_dataset: image-folder-custom
 val_dataset_args:
     root_path: /content/data
     split_file: /content/data/split.json
     split: val
-    image_size: 224
+    image_size: 84
 
 model: classifier
 model_args:
     encoder: resnet12
     encoder_args: 
         emb_size: 128
-        drop_rate: 0.1 # Optional: add dropout if needed
+        drop_rate: 0.1
     classifier: linear-classifier
     classifier_args: {n_classes: 13}
 
-batch_size: 64
+batch_size: 32
+num_workers: 2
 max_epoch: 100
 optimizer: sgd
 optimizer_args: {lr: 0.05, weight_decay: 5.e-4, milestones: [60, 80]}

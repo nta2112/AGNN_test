@@ -77,12 +77,12 @@ def main(config):
     sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
 
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=False,
-                              sampler=sampler, num_workers=8, pin_memory=True)
+                              sampler=sampler, num_workers=config.get('num_workers', 2), pin_memory=True)
     
     if config.get('val_dataset'):
         val_dataset = datasets.make(config['val_dataset'], **config['val_dataset_args'])
         val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False,
-                                num_workers=8, pin_memory=True)
+                                num_workers=config.get('num_workers', 2), pin_memory=True)
     else:
         val_loader = None
 
