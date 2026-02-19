@@ -1,15 +1,15 @@
 train_dataset: image-folder-custom
 train_dataset_args:
-    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
-    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    root_path: /content/data
+    split_file: /content/data/split.json
     split: train
     augment: True
     image_size: 224 # Ensure this matches meta-training image size
 
 val_dataset: image-folder-custom
 val_dataset_args:
-    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
-    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    root_path: /content/data
+    split_file: /content/data/split.json
     split: val
     image_size: 224
 
@@ -20,12 +20,12 @@ model_args:
         emb_size: 128
         pretrained: True
     classifier: linear-classifier
-    classifier_args: {n_classes: 15} # ADJUST THIS: Must match number of Training classes in split.json
+    classifier_args: {n_classes: 13} # ADJUST THIS: Must match number of Training classes in split.json
 
 batch_size: 32 # Reduced batch size for ResNet50
 max_epoch: 100
 optimizer: sgd
-optimizer_args: {lr: 0.001, weight_decay: 5.e-4, milestones: [50, 75]}
+optimizer_args: {lr: 0.0001, weight_decay: 5.e-4, milestones: [50, 75]}
 
 save_epoch: 10
 visualize_datasets: False
