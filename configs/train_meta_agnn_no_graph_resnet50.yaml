@@ -29,7 +29,7 @@ val_dataset_args:
 
 model: gnn
 model_args: 
-    encoder: resnet50
+    encoder: resnet12
     encoder_args: 
         pretrained: True
         image_size: 224
@@ -40,8 +40,8 @@ load_encoder: /content/drive/MyDrive/Do_an_Data/Backbone/Restnet50/max-va.pth
 n_way: 5
 n_shot: 1
 n_query: 15
-train_batches: 100
-test_batches: 5
+train_batches: 80
+test_batches: 10
 ep_per_batch: 1
 
 max_epoch: 20 

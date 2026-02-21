@@ -1,23 +1,24 @@
 train_dataset: image-folder-custom
 train_dataset_args:
-    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
-    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    root_path: /content/data
+    split_file: /content/data/split.json
     split: train
     augment: True
     image_size: 84
+    max_samples_per_class: 200
 
 tval_dataset: image-folder-custom
 tval_dataset_args:
-    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
-    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    root_path: /content/data
+    split_file: /content/data/split.json
     split: test
     augment: False
     image_size: 84
 
 val_dataset: image-folder-custom
 val_dataset_args:
-    root_path: /content/drive/MyDrive/Do_an_Data/tlu-states/images
-    split_file: /content/drive/MyDrive/Do_an_Data/split.json
+    root_path: /content/data
+    split_file: /content/data/split.json
     split: val
     augment: False
     image_size: 84
@@ -30,15 +31,15 @@ model_args:
         drop_rate: 0.1
 
 n_way: 5
-n_shot: 1
+n_shot: 5
 n_query: 15
-train_batches: 20
-test_batches: 20
+train_batches: 80
+test_batches: 10
 ep_per_batch: 2
 
-max_epoch: 100
+max_epoch: 20
 optimizer: adam
 optimizer_args: {lr: 0.0001, weight_decay: 1.e-5}
 
 visualize_datasets: False
-save_epoch: 10
+#save_epoch: 10

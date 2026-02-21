@@ -6,3 +6,4 @@ from . import resnet
 
 from . import vit
 from . import protonet
+from . import node_att
