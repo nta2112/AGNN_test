@@ -23,7 +23,7 @@ val_dataset_args:
     augment: False
     image_size: 84
 
-model: node_att
+model: neighbor_att
 model_args: 
     encoder: resnet12
     encoder_args: 
