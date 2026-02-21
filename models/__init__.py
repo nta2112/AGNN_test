@@ -8,3 +8,4 @@ from . import vit
 from . import protonet
 from . import node_att
 from . import neighbor_att
+from . import layer_att
