@@ -122,8 +122,13 @@ class Wcompute(nn.Module):
 
         if self.operator == 'laplace':
             W_new = W_id - W_new
+        elif self.operator == 'none':
+            pass
         elif self.operator == 'J2':
-            W_new = torch.cat([W_id, W_new], 3)
+            # --- ABLATION: NO PREVIOUS ADJACENCY MATRIX CONNECTIONS ---
+            # Original code: W_new = torch.cat([W_id, W_new], 3)
+            # We skip the concatenation and just return the newly learned attention map alone.
+            W_new = W_new
         else:
             raise(NotImplementedError)
 
@@ -140,15 +145,15 @@ class GNN_nl(nn.Module):
         for i in range(self.num_layers):
             if i == 0:
                 module_w = Wcompute(self.input_features, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
-                module_l = Gconv(self.input_features, int(nf / 2), 2)
+                module_l = Gconv(self.input_features, int(nf / 2), 1)  # J=1 instead of J=2
             else:
                 module_w = Wcompute(self.input_features + int(nf / 2) * i, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
-                module_l = Gconv(self.input_features + int(nf / 2) * i, int(nf / 2), 2)
+                module_l = Gconv(self.input_features + int(nf / 2) * i, int(nf / 2), 1) # J=1 instead of J=2
             self.add_module('layer_w{}'.format(i), module_w)
             self.add_module('layer_l{}'.format(i), module_l)
 
         self.w_comp_last = Wcompute(self.input_features + int(self.nf / 2) * self.num_layers, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
-        self.layer_last = Gconv(self.input_features + int(self.nf / 2) * self.num_layers, self.train_N_way, 2, bn_bool=False)
+        self.layer_last = Gconv(self.input_features + int(self.nf / 2) * self.num_layers, self.train_N_way, 1, bn_bool=False) # J=1 instead of J=2
 
     def forward(self, x):
         
