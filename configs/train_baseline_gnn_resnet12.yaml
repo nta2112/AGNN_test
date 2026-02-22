@@ -1,0 +1,46 @@
+train_dataset: image-folder-custom
+train_dataset_args:
+    root_path: /content/data
+    split_file: /content/data/split.json
+    split: train
+    augment: True
+    image_size: 84
+    max_samples_per_class: 200
+
+tval_dataset: image-folder-custom
+tval_dataset_args:
+    root_path: /content/data
+    split_file: /content/data/split.json
+    split: test
+    augment: False
+    image_size: 84
+
+val_dataset: image-folder-custom
+val_dataset_args:
+    root_path: /content/data
+    split_file: /content/data/split.json
+    split: val
+    augment: False
+    image_size: 84
+
+model: baseline_gnn
+model_args: 
+    encoder: resnet12
+    encoder_args: 
+        emb_size: 128
+        drop_rate: 0.1
+# scan checkpoint if needed, otherwise rely on torchvision pre-trained
+load_encoder: /content/drive/MyDrive/Do_an_Data/Backbone/Restnet12V001/max-va.pth
+
+n_way: 5
+n_shot: 1
+n_query: 15
+train_batches: 80
+test_batches: 10
+ep_per_batch: 2
+
+max_epoch: 20 
+optimizer: adam
+optimizer_args: {lr: 0.0001, weight_decay: 1.e-5}
+
+visualize_datasets: False
