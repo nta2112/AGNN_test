@@ -42,13 +42,31 @@ class ImageFolderCustom(Dataset):
         # Filter classes to ensure they are directories
         classes = [c for c in classes if os.path.isdir(os.path.join(root_path, c))]
 
+        # Support for max_samples_per_class
+        max_samples_per_class = kwargs.get('max_samples_per_class')
+
         for i, c in enumerate(classes):
             class_path = os.path.join(root_path, c)
+            class_files = []
+            
+            # Gather all images for this class
             for filename in sorted(os.listdir(class_path)):
                 if is_image_file(filename):
-                    self.filepaths.append(os.path.join(class_path, filename))
-                    self.label.append(i)
+                    class_files.append(os.path.join(class_path, filename))
+                    
+            # Apply limit if specified and necessary
+            if max_samples_per_class is not None and len(class_files) > max_samples_per_class:
+                import random
+                rng = random.Random(42) # fixed seed for reproducibility across runs if needed
+                class_files = rng.sample(class_files, max_samples_per_class)
+                
+            for filepath in class_files:
+                self.filepaths.append(filepath)
+                self.label.append(i)
         
+        if max_samples_per_class is not None:
+             print(f"Applying class balancing: max {max_samples_per_class} samples per class.")
+
         self.n_classes = max(self.label) + 1 if self.label else 0
 
         norm_params = {'mean': [0.485, 0.456, 0.406],
