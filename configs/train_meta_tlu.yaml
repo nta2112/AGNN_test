@@ -49,16 +49,15 @@
 
 train_dataset: image-folder-custom
 train_dataset_args:
-    root_path: /kaggle/input/tlu-fake-fruit
+    root_path: /kaggle/input/datasets/nta212/tlu-fake-fruit
     split_file: /kaggle/input/datasets/nta212/split-for-tlu-fake-fruit/split.json
     split: train
     augment: True
     image_size: 224
-    max_samples_per_class: 200
 
 tval_dataset: image-folder-custom
 tval_dataset_args:
-    root_path: /kaggle/input/tlu-fake-fruit
+    root_path: /kaggle/input/datasets/nta212/tlu-fake-fruit
     split_file: /kaggle/input/datasets/nta212/split-for-tlu-fake-fruit/split.json
     split: test
     augment: False
@@ -66,7 +65,7 @@ tval_dataset_args:
 
 val_dataset: image-folder-custom
 val_dataset_args:
-    root_path: /kaggle/input/tlu-fake-fruit
+    root_path: /kaggle/input/datasets/nta212/tlu-fake-fruit
     split_file: /kaggle/input/datasets/nta212/split-for-tlu-fake-fruit/split.json
     split: val
     augment: False
