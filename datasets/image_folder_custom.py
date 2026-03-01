@@ -73,9 +73,33 @@ class ImageFolderCustom(Dataset):
                        'std': [0.229, 0.224, 0.225]}
         normalize = transforms.Normalize(**norm_params)
         if kwargs.get('augment'):
+            # self.transform = transforms.Compose([
+
+            #     transforms.Resize((image_size, image_size)), # Chỉ nén/kéo dãn nhẹ
+
+            #     transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05), # Nghịch màu
+
+            #     transforms.RandomRotation(15),       # Xoay nhẹ
+
+            #     transforms.RandomHorizontalFlip(),
+
+            #     transforms.ToTensor(),
+
+            #     normalize,
             self.transform = transforms.Compose([
-                transforms.RandomResizedCrop(image_size),
+                # Cắt ngẫu nhiên 70-100% diện tích ảnh ban đầu, sau đó resize về kích thước chuẩn.
+                # Ép mô hình nhìn vào các chi tiết zoom cận cảnh thay vì nhìn tổng thể.
+                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0)), 
+                
+                # Tăng mạnh biên độ thay đổi màu sắc (sáng, tương phản, độ bão hòa) để mô hình bớt phụ thuộc vào màu.
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1), 
+                
+                # Tăng góc xoay ngẫu nhiên lên 30 độ
+                transforms.RandomRotation(30),       
+                
+                # Lật ngang ảnh
                 transforms.RandomHorizontalFlip(),
+                
                 transforms.ToTensor(),
                 normalize,
             ])
