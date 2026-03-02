@@ -30,9 +30,14 @@ class CategoriesSampler():
                 classes = np.random.choice(len(self.catlocs), self.n_cls,
                                            replace=False)
                 for c in classes:
-                    # print(len(self.catlocs[c]))
-                    l = np.random.choice(self.catlocs[c], self.n_per,
-                                         replace=False)
+                    # Logic ROS+: Tự động Oversampling (với thay thế) nếu class không đủ n_per ảnh
+                    num_samples_in_class = len(self.catlocs[c])
+                    if num_samples_in_class >= self.n_per:
+                        l = np.random.choice(self.catlocs[c], self.n_per,
+                                             replace=False)
+                    else:
+                        l = np.random.choice(self.catlocs[c], self.n_per,
+                                             replace=True)
                     #l2 = self.catlocs[c] 
                     episode.append(torch.from_numpy(l))
                     #episode_t.append(torch.from_numpy(l2))
