@@ -87,19 +87,11 @@ class ImageFolderCustom(Dataset):
 
             #     normalize,
             self.transform = transforms.Compose([
-                # Cắt ngẫu nhiên 70-100% diện tích ảnh ban đầu, sau đó resize về kích thước chuẩn.
-                # Ép mô hình nhìn vào các chi tiết zoom cận cảnh thay vì nhìn tổng thể.
-                transforms.RandomResizedCrop(image_size, scale=(0.7, 1.0)), 
-                
-                # Tăng mạnh biên độ thay đổi màu sắc (sáng, tương phản, độ bão hòa) để mô hình bớt phụ thuộc vào màu.
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1), 
-                
-                # Tăng góc xoay ngẫu nhiên lên 30 độ
-                transforms.RandomRotation(30),       
-                
-                # Lật ngang ảnh
-                transforms.RandomHorizontalFlip(),
-                
+                # Logic ROS_AUG: Biến đổi mạnh dựa trên code được cung cấp
+                transforms.RandomResizedCrop((image_size, image_size), scale=(0.15, 1.1)), 
+                transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1), 
+                transforms.RandomRotation(30), # Giữ lại góc xoay để phong phú hơn
+                transforms.RandomHorizontalFlip(p=0.5),
                 transforms.ToTensor(),
                 normalize,
             ])
