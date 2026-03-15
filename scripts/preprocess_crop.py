@@ -1,7 +1,7 @@
 import os
 import argparse
 import xml.etree.ElementTree as ET
-from PIL import Image
+from PIL import Image, ImageOps
 from tqdm import tqdm
 import shutil
 
@@ -163,7 +163,7 @@ def preprocess(args):
                         count_auto += 1
                     else:
                         # 3. Last Resort: Full Image
-                        img_resized = img.resize((target_size, target_size))
+                        img_resized = ImageOps.pad(img, (target_size, target_size), color=(0, 0, 0))
                         save_name = f"{basename}_full.jpg"
                         img_resized.save(os.path.join(class_out_dir, save_name), quality=90)
                         count_full += 1
@@ -173,7 +173,7 @@ def preprocess(args):
                 # Save collected crops (from XML or Auto)
                 if len(crops) > 0:
                      for i, crop in enumerate(crops):
-                        crop_resized = crop.resize((target_size, target_size))
+                        crop_resized = ImageOps.pad(crop, (target_size, target_size), color=(0, 0, 0))
                         # Use _auto suffix if it came from auto crop to distinguish
                         suffix = "auto" if (len(crops)==1 and count_auto > 0 and "_full" not in filename) else f"crop_{i}" 
                         

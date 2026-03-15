@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-from PIL import Image
+from PIL import Image, ImageOps
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -192,7 +192,7 @@ class ImageFolderCrop(Dataset):
         
         if kwargs.get('augment'):
             self.transform = transforms.Compose([
-                transforms.Resize((image_size + 32, image_size + 32)), # Resize slightly larger before random crop
+                transforms.Lambda(lambda img: ImageOps.pad(img, (image_size + 32, image_size + 32), color=(0, 0, 0))), 
                 transforms.RandomCrop(image_size), # Or RandomResizedCrop
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
@@ -200,7 +200,7 @@ class ImageFolderCrop(Dataset):
             ])
         else:
             self.transform = transforms.Compose([
-                transforms.Resize((box_size, box_size)),
+                transforms.Lambda(lambda img: ImageOps.pad(img, (box_size, box_size), color=(0, 0, 0))), 
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize,
