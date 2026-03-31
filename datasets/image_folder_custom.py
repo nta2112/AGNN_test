@@ -88,7 +88,6 @@ class ImageFolderCustom(Dataset):
             #     normalize,
             self.transform = transforms.Compose([
                 # Logic ROS_AUG: Biến đổi mạnh dựa trên code được cung cấp
-                transforms.RandomResizedCrop((image_size, image_size), scale=(0.15, 1.1)), 
                 transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1), 
                 transforms.RandomRotation(30), # Giữ lại góc xoay để phong phú hơn
                 transforms.RandomHorizontalFlip(p=0.5),
@@ -97,8 +96,6 @@ class ImageFolderCustom(Dataset):
             ])
         else:
             self.transform = transforms.Compose([
-                transforms.Resize(box_size),
-                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize,
             ])
