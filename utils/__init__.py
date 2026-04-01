@@ -186,13 +186,13 @@ def compute_n_params(model, return_str=True):
         return tot
 
 
-def make_optimizer(params, name, lr, weight_decay=None, milestones=None):
+def make_optimizer(params, name, lr, weight_decay=None, milestones=None, momentum=0.9, **kwargs):
     if weight_decay is None:
         weight_decay = 0.
     if name == 'sgd':
-        optimizer = SGD(params, lr, momentum=0.9, weight_decay=weight_decay)
+        optimizer = SGD(params, lr, momentum=momentum, weight_decay=weight_decay, **kwargs)
     elif name == 'adam':
-        optimizer = Adam(params, lr, weight_decay=weight_decay)
+        optimizer = Adam(params, lr, weight_decay=weight_decay, **kwargs)
     if milestones:
         lr_scheduler = MultiStepLR(optimizer, milestones, gamma=0.5)
         #lr_scheduler = ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5, verbose=True)
