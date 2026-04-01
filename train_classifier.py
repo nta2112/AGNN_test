@@ -86,6 +86,7 @@ def main(config):
     utils.log('num params: {}'.format(utils.compute_n_params(model)))
 
     #### Training Loop ####
+    accumulation_steps = config.get('accumulation_steps', 1)
     max_epoch = config['max_epoch']
     save_epoch = config.get('save_epoch')
     max_va = 0.
@@ -118,7 +119,9 @@ def main(config):
             
         writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
 
-        for data, label in tqdm(train_loader, desc='train', leave=False):
+        optimizer.zero_grad()
+        
+        for i, (data, label) in enumerate(tqdm(train_loader, desc='train', leave=False)):
             if torch.cuda.is_available():
                 data, label = data.cuda(), label.cuda()
             
@@ -126,9 +129,12 @@ def main(config):
             loss = F.cross_entropy(logits, label)
             acc = utils.compute_acc(logits, label)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            total_loss = loss / accumulation_steps
+            total_loss.backward()
+            
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+                optimizer.step()
+                optimizer.zero_grad()
 
             aves['tl'].add(loss.item())
             aves['ta'].add(acc)

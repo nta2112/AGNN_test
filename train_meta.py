@@ -138,6 +138,7 @@ def main(config):
             model.parameters(),
             config['optimizer'], **config['optimizer_args'])
     
+    accumulation_steps = config.get('accumulation_steps', 1)
     max_epoch = config['max_epoch']
     save_epoch = config.get('save_epoch')
     max_va = 0.
@@ -160,7 +161,8 @@ def main(config):
         writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
 
         np.random.seed(epoch)
-        for data, _ in tqdm(train_loader, desc='train', leave=False):
+        optimizer.zero_grad()
+        for i, (data, _) in enumerate(tqdm(train_loader, desc='train', leave=False)):
             x_shot, x_query = fs.split_shot_query(
                     data.cuda(), n_train_way, n_train_shot, n_query,
                     ep_per_batch=ep_per_batch)
@@ -170,18 +172,20 @@ def main(config):
             #label2 = fs.make_nk_label(n_train_way, n_train_shot,
             #        ep_per_batch=ep_per_batch).cuda()          
             
-            optimizer.zero_grad()
             logits = model(x_shot, x_query)
             logits = logits.view(-1, n_train_way)
             loss = F.cross_entropy(logits, label)
             acc = utils.compute_acc(logits, label)
 
-            total_loss = loss
+            total_loss = loss / accumulation_steps
             total_loss.backward()
-            optimizer.step()
+            
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+                optimizer.step()
+                optimizer.zero_grad()
             
             #aves['tl'].add(loss.item())
-            aves['tl'].add(total_loss.sum().item())
+            aves['tl'].add(loss.sum().item())
             aves['ta'].add(acc)
 
             logits = None; total_loss = None ;loss = None

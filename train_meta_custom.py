@@ -174,6 +174,7 @@ def main(config, args):
             model.parameters(),
             config['optimizer'], **config['optimizer_args'])
     
+    accumulation_steps = config.get('accumulation_steps', 1)
     max_epoch = config['max_epoch']
     save_epoch = config.get('save_epoch')
     max_va = 0.
@@ -233,6 +234,8 @@ def main(config, args):
         t_bwd_accum = 0.0
         t_start = time.time()
         
+        optimizer.zero_grad()
+        
         for i, (data, _) in enumerate(tqdm(train_loader, desc='train', leave=False)):
             t_data = time.time() - t_start
             t_data_accum += t_data
@@ -243,8 +246,6 @@ def main(config, args):
                     ep_per_batch=ep_per_batch)
             label = fs.make_nk_label(n_train_way, n_query,
                     ep_per_batch=ep_per_batch).cuda()
-            
-            optimizer.zero_grad()
             
             # Anti-gravity: GNN model requires support labels (tr_label)
             # Create support labels: (Batch, N_way * N_shot)
@@ -259,13 +260,17 @@ def main(config, args):
             t_fwd_accum += t_fwd
 
             t_bwd_start = time.time()
-            total_loss = loss
+            total_loss = loss / accumulation_steps
             total_loss.backward()
-            optimizer.step()
+            
+            if (i + 1) % accumulation_steps == 0 or (i + 1) == len(train_loader):
+                optimizer.step()
+                optimizer.zero_grad()
+                
             t_bwd = time.time() - t_bwd_start
             t_bwd_accum += t_bwd
             
-            aves['tl'].add(total_loss.sum().item())
+            aves['tl'].add(loss.sum().item())
             aves['ta'].add(acc)
 
             logits = None; total_loss = None ;loss = None
