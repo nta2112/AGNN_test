@@ -141,3 +141,38 @@ class ResNet50Pretrain(nn.Module):
         x = self.model(x)
         # Apply projection
         return self.projection(x)
+
+@register('resnet18')
+@register('resnet18_pretrain')
+class ResNet18Pretrain(nn.Module):
+    def __init__(self, emb_size=128, pretrained=True, **kwargs):
+        super(ResNet18Pretrain, self).__init__()
+        import torchvision.models as models_tv
+        # Use weights argument for newer torchvision, or pretrained=True for older.
+        try:
+            from torchvision.models import ResNet18_Weights
+            weights = ResNet18_Weights.DEFAULT if pretrained else None
+            self.model = models_tv.resnet18(weights=weights)
+        except ImportError:
+            self.model = models_tv.resnet18(pretrained=pretrained)
+        except Exception as e:
+            if pretrained:
+                print(f"Warning: Failed to load pretrained weights for ResNet18: {e}. Loading random weights.")
+                self.model = models_tv.resnet18(pretrained=False)
+            else:
+                raise e
+
+        # Replace the final fully connected layer
+        # ResNet18 fc input features is 512
+        num_ftrs = self.model.fc.in_features
+        # Use Identity to remove the FC layer effect inside the model
+        self.model.fc = nn.Identity()
+        # Add projection layer
+        self.projection = nn.Linear(num_ftrs, emb_size)
+        self.out_dim = emb_size
+
+    def forward(self, x):
+        # Extract features from resnet
+        x = self.model(x)
+        # Apply projection
+        return self.projection(x)
