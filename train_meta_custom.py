@@ -211,6 +211,11 @@ def main(config, args):
             # Load optimizer state
             if optimizer_state is not None:
                 optimizer.load_state_dict(optimizer_state)
+            
+            # Khôi phục đúng lịch trình giảm Learning Rate
+            if lr_scheduler is not None:
+                for _ in range(1, start_epoch):
+                    lr_scheduler.step()
                  
             utils.log(f"=> loaded checkpoint '{args.resume}' (epoch {start_epoch - 1})")
         else:
