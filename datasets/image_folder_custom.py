@@ -99,7 +99,7 @@ class ImageFolderCustom(Dataset):
             ])
         else:
             self.transform = transforms.Compose([
-                # transforms.CenterCrop(image_size),
+                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize,
             ])
