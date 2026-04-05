@@ -111,11 +111,11 @@ optimizer: adam
 optimizer_args:
   lr: 0.0001
   milestones:
-  - 10       # Dịch milestone muộn hơn vì dropout làm model hội tụ chậm hơn
+  - 10       
   - 20
   - 30
-  weight_decay: 1.e-3   # Tăng từ 5e-4 → 1e-3 để regularize mạnh hơn
-test_batches: 200        # Tăng từ 100 → 200 để giảm variance của val accuracy
+  weight_decay: 1.e-3   
+test_batches: 200        
 train_batches: 200
 train_dataset: image-folder-custom
 train_dataset_args:
@@ -132,4 +132,4 @@ val_dataset_args:
   root_path: /kaggle/input/datasets/nta212/tlu-fake-fruit/data_cropped_224_da_clean/data_cropped_224_da_clean
   split: val
   split_file: /kaggle/input/datasets/nta212/split-for-tlu-fake-fruit/slpit_thuNghiem.json
-visualize_datasets: false
+visualize_datasets: false

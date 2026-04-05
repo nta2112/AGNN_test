@@ -17,8 +17,7 @@ def is_image_file(filename):
 class ImageFolderCustom(Dataset):
 
     def __init__(self, root_path, image_size=224, box_size=256, **kwargs):
-        if box_size is None:
-            box_size = image_size
+        box_size = 256  # Fix cứng: luôn Resize về 256 trước khi crop
 
         self.filepaths = []
         self.label = []
@@ -65,40 +64,39 @@ class ImageFolderCustom(Dataset):
                 self.label.append(i)
         
         if max_samples_per_class is not None:
-             print(f"Applying class balancing: max {max_samples_per_class} samples per class.")
+            print(f"Applying class balancing: max {max_samples_per_class} samples per class.")
 
         self.n_classes = max(self.label) + 1 if self.label else 0
+
+        print(f"Transform: Resize({box_size}) → "
+              f"{'RandomResizedCrop' if kwargs.get('augment') else 'CenterCrop'}({image_size})")
 
         norm_params = {'mean': [0.485, 0.456, 0.406],
                        'std': [0.229, 0.224, 0.225]}
         normalize = transforms.Normalize(**norm_params)
+
         if kwargs.get('augment'):
-            # self.transform = transforms.Compose([
-
-            #     transforms.Resize((image_size, image_size)), # Chỉ nén/kéo dãn nhẹ
-
-            #     transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.05), # Nghịch màu
-
-            #     transforms.RandomRotation(15),       # Xoay nhẹ
-
-            #     transforms.RandomHorizontalFlip(),
-
-            #     transforms.ToTensor(),
-
-            #     normalize,
+            # Train transform:
+            # Resize(box_size)          → đưa ảnh đa kích thước về cùng scale
+            # RandomRotation            → xoay ngẫu nhiên ±10°
+            # RandomResizedCrop         → crop ngẫu nhiên 85-100% rồi resize về image_size
+            # ColorJitter               → biến đổi màu nhẹ
+            # RandomHorizontalFlip      → lật ngang 50%
             self.transform = transforms.Compose([
-                # Logic ROS_AUG: Biến đổi mạnh dựa trên code được cung cấp
-                transforms.RandomRotation(10), # Giữ lại góc xoay để phong phú 
+                transforms.Resize(box_size),
+                transforms.RandomRotation(10),
                 transforms.RandomResizedCrop(image_size, scale=(0.85, 1.0)),
-                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.01), 
+                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.01),
                 transforms.RandomHorizontalFlip(p=0.5),
-                # transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize,
-
             ])
         else:
+            # Val/Test transform:
+            # Resize(box_size)          → resize cạnh ngắn về box_size, giữ tỉ lệ
+            # CenterCrop(image_size)    → lấy vùng trung tâm image_size × image_size
             self.transform = transforms.Compose([
+                transforms.Resize(box_size),
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 normalize,
