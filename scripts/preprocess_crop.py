@@ -13,6 +13,33 @@ def is_image_file(filename):
 import cv2
 import numpy as np
 
+def is_good_crop(crop_img, min_size=30, max_ratio=4.0, min_blur_var=50.0):
+    """
+    Check if the cropped image is good enough.
+    Criteria: Not too small, not too narrow, not too blurry.
+    """
+    w, h = crop_img.size
+    
+    # 1. Check size (too small)
+    if w < min_size or h < min_size:
+        return False
+        
+    # 2. Check aspect ratio (too narrow)
+    ratio = max(w/h, h/w) if h > 0 and w > 0 else float('inf')
+    if ratio > max_ratio:
+        return False
+        
+    # 3. Check blurriness using Variance of Laplacian
+    try:
+        img_cv = cv2.cvtColor(np.array(crop_img), cv2.COLOR_RGB2GRAY)
+        variance = cv2.Laplacian(img_cv, cv2.CV_64F).var()
+        if variance < min_blur_var:
+            return False
+    except Exception:
+        pass # If we fail to compute blur, just let it pass
+        
+    return True
+
 def get_saliency_crop(img_pil):
     """
     Detects the most salient object in the image and returns a crop.
@@ -104,6 +131,7 @@ def preprocess(args):
     count_full = 0
     count_auto = 0
     count_err = 0
+    count_discarded = 0
     
     for class_name in tqdm(classes, desc="Processing classes"):
         class_img_dir = os.path.join(images_dir, class_name)
@@ -145,8 +173,12 @@ def preprocess(args):
                                 # Validate box
                                 if xmax > xmin and ymax > ymin:
                                     crop = img.crop((xmin, ymin, xmax, ymax))
-                                    crops.append(crop)
-                                    has_object = True
+                                    if is_good_crop(crop):
+                                        crops.append(crop)
+                                        has_object = True
+                                    else:
+                                        # Box was valid but crop is discarded due to quality
+                                        pass
                         
                         if not has_object:
                             # valid XML but no object -> Auto crop later
@@ -158,36 +190,49 @@ def preprocess(args):
                 # 2. If No XML Crops, Try Auto Saliency Crop
                 if len(crops) == 0:
                     auto_crop = get_saliency_crop(img)
-                    if auto_crop is not None:
+                    if auto_crop is not None and is_good_crop(auto_crop):
                         crops.append(auto_crop)
                         count_auto += 1
                     else:
                         # 3. Last Resort: Full Image
-                        img_resized = ImageOps.pad(img, (target_size, target_size), color=(0, 0, 0))
-                        save_name = f"{basename}_full.jpg"
-                        img_resized.save(os.path.join(class_out_dir, save_name), quality=90)
-                        count_full += 1
+                        if is_good_crop(img):
+                            if args.keep_size:
+                                img_to_save = img
+                            else:
+                                img_to_save = ImageOps.pad(img, (target_size, target_size), color=(0, 0, 0))
+                            
+                            save_name = f"{basename}_full.jpg"
+                            img_to_save.save(os.path.join(class_out_dir, save_name), quality=90)
+                            count_full += 1
+                        else:
+                            # Both crops and full image failed quality checks
+                            count_discarded += 1
                 else:
-                    count_crop += 1
+                    count_crop += len(crops)
 
                 # Save collected crops (from XML or Auto)
                 if len(crops) > 0:
                      for i, crop in enumerate(crops):
-                        crop_resized = ImageOps.pad(crop, (target_size, target_size), color=(0, 0, 0))
+                        if args.keep_size:
+                            crop_to_save = crop
+                        else:
+                            crop_to_save = ImageOps.pad(crop, (target_size, target_size), color=(0, 0, 0))
+                            
                         # Use _auto suffix if it came from auto crop to distinguish
                         suffix = "auto" if (len(crops)==1 and count_auto > 0 and "_full" not in filename) else f"crop_{i}" 
                         
                         save_name = f"{basename}_{suffix}.jpg"
-                        crop_resized.save(os.path.join(class_out_dir, save_name), quality=90)
+                        crop_to_save.save(os.path.join(class_out_dir, save_name), quality=90)
                         
             except Exception as e:
                 print(f"Error processing image {img_path}: {e}")
                 count_err += 1
 
     print("Preprocessing Complete!")
-    print(f"Total XML Crops: {count_crop}")
-    print(f"Total Auto Crops: {count_auto}")
-    print(f"Total Full Images (Fallback): {count_full}")
+    print(f"Total XML Crops saved: {count_crop}")
+    print(f"Total Auto Crops saved: {count_auto}")
+    print(f"Total Full Images saved: {count_full}")
+    print(f"Total Discarded (Too small/narrow/blurry): {count_discarded}")
     print(f"Errors: {count_err}")
 
 if __name__ == '__main__':
@@ -195,6 +240,7 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, required=True, help='Input root path containing images/ and annotations/')
     parser.add_argument('--output', type=str, required=True, help='Output root path')
     parser.add_argument('--size', type=int, default=256, help='Target size for resize (default: 256)')
+    parser.add_argument('--keep-size', action='store_true', help='Skip padding/resizing and save crop at original size')
     parser.add_argument('--split-file', type=str, default=None, help='Path to split.json (optional)')
     parser.add_argument('--split-name', type=str, default='train', help='Key in split.json to filter (default: train)')
     args = parser.parse_args()

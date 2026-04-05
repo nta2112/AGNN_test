@@ -30,11 +30,11 @@ model: gnn
 model_args: 
     encoder: resnet12
     encoder_args: 
-        emb_size: 128   # Specific to ResNet12 implementation
+        emb_size: 128   
         drop_rate: 0.1
-    ablation_no_graph: True  # <--- CRITICAL: This disables the graph component
+    ablation_no_graph: True
 
-# scan checkpoint if needed
+# scan backbone
 load_encoder: /content/drive/MyDrive/Do_an_Data/Backbone/Restnet12V001/max-va.pth # UPDATE THIS PATH
 
 n_way: 5

@@ -162,24 +162,26 @@ class Wcompute(nn.Module):
         return W_new
 
 class GNN_nl(nn.Module):
-    def __init__(self, input_features, nf, n_way=5):
+    def __init__(self, input_features, nf, n_way=5, drop_rate=0.3):
         super(GNN_nl, self).__init__()
         self.train_N_way = n_way
         self.input_features = input_features
         self.nf = nf
         self.num_layers = 3
+        self.node_dropout = nn.Dropout(p=drop_rate * 0.5)  # dropout sau Gconv
 
         for i in range(self.num_layers):
             if i == 0:
-                module_w = Wcompute(self.input_features, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
+                # drop=True: bật Dropout(0.3) bên trong Wcompute
+                module_w = Wcompute(self.input_features, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1], drop=True)
                 module_l = Gconv(self.input_features, int(nf / 2), 2)
             else:
-                module_w = Wcompute(self.input_features + int(nf / 2) * i, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
+                module_w = Wcompute(self.input_features + int(nf / 2) * i, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1], drop=True)
                 module_l = Gconv(self.input_features + int(nf / 2) * i, int(nf / 2), 2)
             self.add_module('layer_w{}'.format(i), module_w)
             self.add_module('layer_l{}'.format(i), module_l)
 
-        self.w_comp_last = Wcompute(self.input_features + int(self.nf / 2) * self.num_layers, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1])
+        self.w_comp_last = Wcompute(self.input_features + int(self.nf / 2) * self.num_layers, nf, operator='J2', activation='softmax', ratio=[2, 2, 1, 1], drop=True)
         self.layer_last = Gconv(self.input_features + int(self.nf / 2) * self.num_layers, self.train_N_way, 2, bn_bool=False)
 
     def forward(self, x):
@@ -189,12 +191,12 @@ class GNN_nl(nn.Module):
         for i in range(self.num_layers):
             Wi = self._modules['layer_w{}'.format(i)](x, W_init)               
             x_new = F.leaky_relu(self._modules['layer_l{}'.format(i)]([Wi, x])[1])
+            x_new = self.node_dropout(x_new)   # Dropout sau mỗi GNN layer
             x = torch.cat([x, x_new], 2)
            
         Wl=self.w_comp_last(x, W_init)
         out = self.layer_last([Wl, x])[1]
 
-        # Removed hardcoding out[:, 25:50, :]
         return out
 
 @register('gnn')
