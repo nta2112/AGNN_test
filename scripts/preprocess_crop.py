@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from PIL import Image, ImageOps
 from tqdm import tqdm
 import shutil
+import torchvision.transforms.functional as TF
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
@@ -79,6 +80,28 @@ def get_saliency_crop(img_pil):
         print(f"Saliency detection error: {e}")
         
     return None # Fallback to full image if detection fails
+
+def resize_to_target(crop_img, target_size):
+    """
+    Resize crop về target_size x target_size.
+    Bước 1: Resize cạnh ngắn về target_size (giữ tỉ lệ khung hình)
+    Bước 2: CenterCrop về target_size x target_size
+    → Không méo, không padding đen, lấp đầy toàn bộ khung ảnh.
+    """
+    w, h = crop_img.size
+    # Resize cạnh ngắn về target_size
+    if w < h:
+        new_w = target_size
+        new_h = int(h * target_size / w)
+    else:
+        new_h = target_size
+        new_w = int(w * target_size / h)
+    resized = crop_img.resize((new_w, new_h), Image.LANCZOS)
+    # CenterCrop về target_size x target_size
+    left = (new_w - target_size) // 2
+    top  = (new_h - target_size) // 2
+    return resized.crop((left, top, left + target_size, top + target_size))
+
 
 def preprocess(args):
     input_root = args.input
@@ -195,32 +218,39 @@ def preprocess(args):
                         count_auto += 1
                     else:
                         # 3. Last Resort: Full Image
+                        # is_good_crop kiểm tra trên ảnh gốc (kích thước gốc)
                         if is_good_crop(img):
                             if args.keep_size:
                                 img_to_save = img
                             else:
-                                img_to_save = ImageOps.pad(img, (target_size, target_size), color=(0, 0, 0))
+                                # Resize sau khi đã xét chất lượng
+                                img_to_save = resize_to_target(img, target_size)
                             
                             save_name = f"{basename}_full.jpg"
                             img_to_save.save(os.path.join(class_out_dir, save_name), quality=90)
                             count_full += 1
                         else:
-                            # Both crops and full image failed quality checks
+                            # Không đạt chất lượng → bỏ qua
                             count_discarded += 1
                 else:
                     count_crop += len(crops)
 
                 # Save collected crops (from XML or Auto)
+                # Lưu ý: is_good_crop() đã chạy trên crop kích thước GỐC ở trên.
+                # Chỉ resize ở bước này — sau khi đã vượt qua bộ lọc chất lượng.
                 if len(crops) > 0:
-                     for i, crop in enumerate(crops):
+                    for i, crop in enumerate(crops):
                         if args.keep_size:
+                            # Giữ nguyên kích thước crop gốc, không resize
                             crop_to_save = crop
                         else:
-                            crop_to_save = ImageOps.pad(crop, (target_size, target_size), color=(0, 0, 0))
-                            
+                            # Resize: cạnh ngắn → target_size, rồi CenterCrop
+                            # Giữ tỉ lệ khung hình, không padding đen, không méo
+                            crop_to_save = resize_to_target(crop, target_size)
+
                         # Use _auto suffix if it came from auto crop to distinguish
-                        suffix = "auto" if (len(crops)==1 and count_auto > 0 and "_full" not in filename) else f"crop_{i}" 
-                        
+                        suffix = "auto" if (len(crops) == 1 and count_auto > 0 and "_full" not in filename) else f"crop_{i}"
+
                         save_name = f"{basename}_{suffix}.jpg"
                         crop_to_save.save(os.path.join(class_out_dir, save_name), quality=90)
                         
@@ -239,8 +269,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, required=True, help='Input root path containing images/ and annotations/')
     parser.add_argument('--output', type=str, required=True, help='Output root path')
-    parser.add_argument('--size', type=int, default=256, help='Target size for resize (default: 256)')
-    parser.add_argument('--keep-size', action='store_true', help='Skip padding/resizing and save crop at original size')
+    parser.add_argument('--size', type=int, default=256, help='Target size sau khi resize (default: 256). is_good_crop() chạy trước trên kích thước gốc.')
+    parser.add_argument('--keep-size', action='store_true', help='Giữ nguyên kích thước crop gốc, không resize')
     parser.add_argument('--split-file', type=str, default=None, help='Path to split.json (optional)')
     parser.add_argument('--split-name', type=str, default='train', help='Key in split.json to filter (default: train)')
     args = parser.parse_args()
