@@ -283,16 +283,16 @@ class gnn(nn.Module):
         x = F.normalize(x_node, p=2, dim=2, eps=1e-12)        
         x_trans = torch.transpose(x, 1, 2)  # batch, dim, N
         att = torch.bmm(x, x_trans)         # batch, N, N  (N=5*1(5)+5*15  80 or 100)
-        # mask_f = F.softmax(att, dim=2)
+        mask_f = F.softmax(att, dim=2)
 
         # att = self.slf_attn(x_node,x_node)           
         
         lab_t = torch.transpose(label_fea, 1, 2)
         att_l = torch.bmm(label_fea, lab_t)
-        # mask_l = F.softmax(att_l, dim=2)
+        mask_l = F.softmax(att_l, dim=2)
 
-        # mask_c = torch.cat([mask_f.unsqueeze(1),mask_l.unsqueeze(1)],dim=1)
-        mask_c = torch.cat([att.unsqueeze(1),att_l.unsqueeze(1)],dim=1)
+        mask_c = torch.cat([mask_f.unsqueeze(1),mask_l.unsqueeze(1)],dim=1)
+        # mask_c = torch.cat([att.unsqueeze(1),att_l.unsqueeze(1)],dim=1)
         new_mask = self.fusion(mask_c).squeeze(1)
         # new_fea = torch.bmm(new_mask, x_node)
 
