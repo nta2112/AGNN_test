@@ -22,9 +22,9 @@ class Classifier(nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)
+        if isinstance(x, list):
+            x = x[0]
         x = self.classifier(x.view(x.shape[0], -1))
-        # x = self.avgpool(x)
-        # x = self.classifier(x.view(x.shape[0], -1))
         return x
 
 

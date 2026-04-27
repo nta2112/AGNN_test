@@ -231,12 +231,20 @@ def main(config):
             'optimizer_args': config['optimizer_args'],
             'optimizer_sd': optimizer.state_dict(),
         }
+        
+        # Extract encoder state dict for AGNN Extension compatibility
+        if config.get('_parallel'):
+            encoder_sd = model.module.encoder.state_dict()
+        else:
+            encoder_sd = model.encoder.state_dict()
+
         save_obj = {
             'file': __file__,
             'config': config,
             'model': config['model'],
             'model_args': config['model_args'],
             'model_sd': model.state_dict() if not config.get('_parallel') else model.module.state_dict(),
+            'enc_module_state_dict': encoder_sd, # Key for Extension/main_gnn.py
             'training': training,
         }
         torch.save(save_obj, os.path.join(save_path, 'epoch-last.pth'))
